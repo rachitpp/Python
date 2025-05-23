@@ -13,6 +13,7 @@ import { API_ROUTES } from "./config";
 // Create a configuration object with the API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+// Interfaces for API responses
 interface Prediction {
   x: number;
   y: number;
@@ -29,6 +30,41 @@ interface DetectionResults {
 interface FileResult {
   file_id: string;
   detection_results: DetectionResults;
+}
+
+interface UploadResponse {
+  message: string;
+  file_id: string;
+  converted_image_path: string;
+  image_id?: string; // Optional for backward compatibility
+}
+
+interface MultipleUploadResponse {
+  message: string;
+  files: Array<{
+    original_filename: string;
+    file_id: string;
+    converted_image_path: string;
+  }>;
+  count: number;
+}
+
+interface DetectionResponse {
+  message: string;
+  detection_results: DetectionResults;
+}
+
+interface DiagnosticReportResponse {
+  message: string;
+  report: string;
+}
+
+interface BatchDetectionResponse {
+  results: FileResult[];
+  errors: Array<{
+    file_id: string;
+    error: string;
+  }>;
 }
 
 // Tab options for the main interface
@@ -101,11 +137,15 @@ function App() {
 
     try {
       console.log("Uploading file:", file.name);
-      const response = await axios.post(API_ROUTES.UPLOAD, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios.post<UploadResponse>(
+        API_ROUTES.UPLOAD,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       console.log("Upload response:", response.data);
 
@@ -166,11 +206,15 @@ function App() {
 
     try {
       console.log(`Uploading ${files.length} files`);
-      const response = await axios.post(API_ROUTES.UPLOAD_MULTIPLE, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios.post<MultipleUploadResponse>(
+        API_ROUTES.UPLOAD_MULTIPLE,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       console.log("Upload response:", response.data);
 
@@ -180,9 +224,7 @@ function App() {
         response.data.files &&
         response.data.files.length > 0
       ) {
-        const fileIds = response.data.files.map(
-          (file: { file_id: string }) => file.file_id
-        );
+        const fileIds = response.data.files.map((file) => file.file_id);
 
         setUploadedFileIds(fileIds);
         // Set the first image as the active one
@@ -215,7 +257,7 @@ function App() {
     setLoading((prev) => ({ ...prev, batchDetection: true }));
 
     try {
-      const response = await axios.post(
+      const response = await axios.post<BatchDetectionResponse>(
         API_ROUTES.DETECT_BATCH,
         uploadedFileIds
       );
@@ -224,7 +266,7 @@ function App() {
       if (response.data && response.data.results) {
         // Get results for the current active image
         const currentImageResult = response.data.results.find(
-          (result: FileResult) => result.file_id === uploadedImageId
+          (result) => result.file_id === uploadedImageId
         );
 
         if (currentImageResult) {
@@ -256,7 +298,9 @@ function App() {
     setDetectionResults(null);
 
     try {
-      const response = await axios.post(API_ROUTES.DETECT(uploadedImageId));
+      const response = await axios.post<DetectionResponse>(
+        API_ROUTES.DETECT(uploadedImageId)
+      );
       console.log("Detection response:", response.data);
 
       if (response.data && response.data.detection_results) {
@@ -284,7 +328,9 @@ function App() {
     setDiagnosticReport(null);
 
     try {
-      const response = await axios.post(API_ROUTES.REPORT(uploadedImageId));
+      const response = await axios.post<DiagnosticReportResponse>(
+        API_ROUTES.REPORT(uploadedImageId)
+      );
       console.log("Report response:", response.data);
 
       if (response.data && response.data.report) {
