@@ -6,6 +6,11 @@ class UploadResponse(BaseModel):
     file_id: str
     converted_image_path: str
 
+class MultipleUploadResponse(BaseModel):
+    message: str
+    files: List[Dict[str, str]]
+    count: int
+
 class DetectionResult(BaseModel):
     message: str
     detection_results: Dict[str, Any]

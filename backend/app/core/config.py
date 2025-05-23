@@ -36,3 +36,6 @@ DEBUG = True
 PROJECT_NAME = "Dental X-ray Diagnostic API"
 VERSION = "1.0.0"
 DESCRIPTION = "API for dental X-ray diagnostics using Roboflow and OpenAI"
+
+# Test mode
+TEST_MODE = os.environ.get("TEST_MODE", "False").lower() == "true"
