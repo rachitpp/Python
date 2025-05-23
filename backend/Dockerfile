@@ -32,4 +32,5 @@ RUN mkdir -p uploads processed
 EXPOSE $PORT
 
 # Command to run the application for production with optimized settings
-CMD gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT 
+# Use only 1 worker with preload for better memory efficiency
+CMD gunicorn main:app --workers 1 --timeout 120 --preload --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT 

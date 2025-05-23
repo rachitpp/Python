@@ -181,10 +181,19 @@ async def generate_report(file_id: str):
 
 # Add a batch processing endpoint for multiple files
 @router.post("/detect-batch/", response_model=Dict[str, List])
-async def detect_pathologies_batch(file_ids: List[str]):
+async def detect_pathologies_batch(file_ids: List[str], background_tasks: BackgroundTasks = None):
     """
     Detect pathologies for multiple images in batch
     """
+    # Limit batch size to prevent memory issues
+    MAX_BATCH_SIZE = 3
+    
+    if len(file_ids) > MAX_BATCH_SIZE:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Batch size too large. Maximum allowed is {MAX_BATCH_SIZE} files."
+        )
+    
     results = []
     errors = []
     
@@ -228,3 +237,11 @@ async def detect_pathologies_batch(file_ids: List[str]):
         "results": results,
         "errors": errors
     }
+
+@router.get("/health", status_code=200)
+async def health_check():
+    """
+    Health check endpoint for monitoring.
+    Used by Render.com and other services to verify the application is running.
+    """
+    return {"status": "healthy", "version": "1.0.0"}
